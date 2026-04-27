@@ -1,0 +1,101 @@
+// Con este código se puede probar el reproductor MP3 (El archivo tienen el formato .mp3 y el nombre es 0001), la tarjeta SD (Formateado en formato FAT32),
+el parlante y los pulsadores para subir y bajar volumen.
+
+#include <SoftwareSerial.h>
+#include <DFRobotDFPlayerMini.h>
+
+SoftwareSerial mySerial(10, 11); // RX, TX
+DFRobotDFPlayerMini player;
+
+// Botones
+int btnPlay = 8;
+int btnPause = 9;
+
+// Control
+int volumen = 20;
+unsigned long tiempoPresionado = 0;
+bool presionandoPlay = false;
+bool presionandoPause = false;
+
+void setup() {
+  Serial.begin(9600);
+  mySerial.begin(9600);
+
+  if (!player.begin(mySerial)) {
+    Serial.println("Error DFPlayer");
+    while (true);
+  }
+
+  player.volume(volumen);
+
+  pinMode(btnPlay, INPUT_PULLUP);
+  pinMode(btnPause, INPUT_PULLUP);
+
+  delay(1000);
+  player.play(1);
+
+  Serial.println("Sistema listo");
+}
+
+void loop() {
+
+  // ===== BOTON PLAY =====
+  if (digitalRead(btnPlay) == LOW) {
+    if (!presionandoPlay) {
+      tiempoPresionado = millis();
+      presionandoPlay = true;
+    }
+
+    // Pulsación larga (>500 ms)
+    if (millis() - tiempoPresionado > 500) {
+      if (volumen < 30) {
+        volumen++;
+        player.volume(volumen);
+        Serial.print("Volumen: ");
+        Serial.println(volumen);
+        delay(200); // velocidad de subida
+      }
+    }
+
+  } else {
+    // Se soltó el botón
+    if (presionandoPlay) {
+      if (millis() - tiempoPresionado < 500) {
+        // Pulsación corta
+        Serial.println("PLAY");
+        player.play(1);
+      }
+      presionandoPlay = false;
+    }
+  }
+
+  // ===== BOTON PAUSE =====
+  if (digitalRead(btnPause) == LOW) {
+    if (!presionandoPause) {
+      tiempoPresionado = millis();
+      presionandoPause = true;
+    }
+
+    // Pulsación larga (>500 ms)
+    if (millis() - tiempoPresionado > 500) {
+      if (volumen > 0) {
+        volumen--;
+        player.volume(volumen);
+        Serial.print("Volumen: ");
+        Serial.println(volumen);
+        delay(200); // velocidad de bajada
+      }
+    }
+
+  } else {
+    // Se soltó el botón
+    if (presionandoPause) {
+      if (millis() - tiempoPresionado < 500) {
+        // Pulsación corta
+        Serial.println("PAUSA");
+        player.pause();
+      }
+      presionandoPause = false;
+    }
+  }
+}
