@@ -2,8 +2,6 @@
 
 ---
 
-## 📁 Archivos del Proyecto
-
 ### 1️⃣ Código prueba de 4 servos
 
 #### 🔌 Pines Conectados:
