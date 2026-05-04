@@ -1,0 +1,111 @@
+// Con este código se puede probar el robot ya ensamblado y reproduciendo 5 audios
+
+#include <SoftwareSerial.h>
+#include <DFRobotDFPlayerMini.h>
+
+SoftwareSerial mySerial(10, 11); // RX, TX
+DFRobotDFPlayerMini player;
+
+// Botones
+int btnPlay = 8;
+int btnPause = 9;
+
+// Control
+int volumen = 20;
+unsigned long tiempoPresionado = 0;
+bool presionandoPlay = false;
+bool presionandoPause = false;
+
+// Control de pistas
+int pista = 3; // empieza desde 0003
+
+void setup() {
+  Serial.begin(9600);
+  mySerial.begin(9600);
+
+  if (!player.begin(mySerial)) {
+    Serial.println("Error DFPlayer");
+    while (true);
+  }
+
+  player.volume(volumen);
+
+  pinMode(btnPlay, INPUT_PULLUP);
+  pinMode(btnPause, INPUT_PULLUP);
+
+  Serial.println("Inicio...");
+
+  // Reproduce 0001
+  player.play(1);
+  delay(5000);
+
+  // Luego 0002
+  player.play(2);
+
+  Serial.println("Sistema listo");
+}
+
+void loop() {
+
+  // ===== BOTON PLAY =====
+  if (digitalRead(btnPlay) == LOW) {
+    if (!presionandoPlay) {
+      tiempoPresionado = millis();
+      presionandoPlay = true;
+    }
+
+    // Pulsación larga → subir volumen
+    if (millis() - tiempoPresionado > 500) {
+      if (volumen < 30) {
+        volumen++;
+        player.volume(volumen);
+        Serial.print("Volumen: ");
+        Serial.println(volumen);
+        delay(200);
+      }
+    }
+
+  } else {
+    if (presionandoPlay) {
+      if (millis() - tiempoPresionado < 500) {
+        
+        // Reproduce siguiente pista (0003, 0004, 0005)
+        Serial.print("Reproduciendo pista: ");
+        Serial.println(pista);
+        player.play(pista);
+
+        pista++;
+        if (pista > 5) pista = 3; // vuelve a 0003
+      }
+      presionandoPlay = false;
+    }
+  }
+
+  // ===== BOTON PAUSE =====
+  if (digitalRead(btnPause) == LOW) {
+    if (!presionandoPause) {
+      tiempoPresionado = millis();
+      presionandoPause = true;
+    }
+
+    // Pulsación larga → bajar volumen
+    if (millis() - tiempoPresionado > 500) {
+      if (volumen > 0) {
+        volumen--;
+        player.volume(volumen);
+        Serial.print("Volumen: ");
+        Serial.println(volumen);
+        delay(200);
+      }
+    }
+
+  } else {
+    if (presionandoPause) {
+      if (millis() - tiempoPresionado < 500) {
+        Serial.println("PAUSA");
+        player.pause();
+      }
+      presionandoPause = false;
+    }
+  }
+}
