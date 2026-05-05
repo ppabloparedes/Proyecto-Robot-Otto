@@ -1,0 +1,184 @@
+// Con este código se puede probar el robot ya ensamblado y reproduciendo 6 audios y bailando
+
+#include <SoftwareSerial.h>
+#include <DFRobotDFPlayerMini.h>
+#include <Servo.h>
+
+SoftwareSerial mySerial(10, 11); // RX, TX
+DFRobotDFPlayerMini player;
+
+// Servos
+Servo servo1;
+Servo servo2;
+
+// LEDs
+int led1 = 12;
+int led2 = 13;
+
+// Botones
+int btnPlay = 8;
+int btnPause = 9;
+
+// Control
+int volumen = 20;
+unsigned long tiempoPresionado = 0;
+bool presionandoPlay = false;
+bool presionandoPause = false;
+
+// Control de pistas
+int pista = 3;
+
+// Posición inicial
+int pos1 = 105;
+int pos2 = 95;
+
+void setup() {
+  Serial.begin(9600);
+  mySerial.begin(9600);
+
+  servo1.attach(2);
+  servo2.attach(3);
+
+  pinMode(led1, OUTPUT);
+  pinMode(led2, OUTPUT);
+
+  servo1.write(pos1); //MOTOR 1
+  servo2.write(pos2); //MOTOR 2
+
+  if (!player.begin(mySerial)) {
+    Serial.println("Error DFPlayer");
+    while (true);
+  }
+
+  player.volume(volumen);
+
+  pinMode(btnPlay, INPUT_PULLUP);
+  pinMode(btnPause, INPUT_PULLUP);
+
+  Serial.println("Inicio...");
+
+  // AUDIO 0001
+  player.play(1);
+
+  // PARPADEO POR 5 SEGUNDOS
+  unsigned long inicio = millis();
+  while (millis() - inicio < 5000) {
+    digitalWrite(led1, HIGH);
+    digitalWrite(led2, LOW);
+    delay(200);
+
+    digitalWrite(led1, LOW);
+    digitalWrite(led2, HIGH);
+    delay(200);
+  }
+
+  digitalWrite(led1, LOW);
+  digitalWrite(led2, LOW);
+
+  // AUDIO 0002
+  player.play(2);
+
+  Serial.println("Sistema listo");
+}
+
+void loop() {
+
+  // Mantener posición
+  servo1.write(pos1); //MOTOR 1
+  servo2.write(pos2); //MOTOR 2
+
+  // BOTON PLAY
+  if (digitalRead(btnPlay) == LOW) {
+    if (!presionandoPlay) {
+      tiempoPresionado = millis();
+      presionandoPlay = true;
+    }
+
+    // Subir volumen
+    if (millis() - tiempoPresionado > 500) {
+      if (volumen < 30) {
+        volumen++;
+        player.volume(volumen);
+        delay(200);
+      }
+    }
+
+  } else {
+    if (presionandoPlay) {
+      if (millis() - tiempoPresionado < 500) {
+
+        Serial.print("Reproduciendo pista: ");
+        Serial.println(pista);
+
+        // CASO ESPECIAL: BAILE (0005)
+        if (pista == 5) {
+
+          player.play(5); // Reproduce 0005
+          delay(300);
+
+          for (int i = 0; i < 5; i++) {
+
+            // Paso 1
+            servo1.write(125); //MOTOR 1
+            servo2.write(95);  //MOTOR 2
+
+            digitalWrite(led1, HIGH);
+            digitalWrite(led2, HIGH);
+            delay(500);
+
+            // Paso 2
+            servo1.write(105); //MOTOR 1
+            servo2.write(65);  //MOTOR 2
+
+            digitalWrite(led1, LOW);
+            digitalWrite(led2, LOW);
+            delay(500);
+          }
+
+          // Apagar LEDs
+          digitalWrite(led1, LOW);
+          digitalWrite(led2, LOW);
+
+          // Volver a posición
+          servo1.write(pos1); //MOTOR 1
+          servo2.write(pos2); //MOTOR 2
+
+          player.pause(); // Detiene música al terminar baile
+
+        } else {
+          // Otros audios normales
+          player.play(pista);
+        }
+
+        pista++;
+        if (pista > 6) pista = 3;
+      }
+      presionandoPlay = false;
+    }
+  }
+
+  // BOTON PAUSE
+  if (digitalRead(btnPause) == LOW) {
+    if (!presionandoPause) {
+      tiempoPresionado = millis();
+      presionandoPause = true;
+    }
+
+    // Bajar volumen
+    if (millis() - tiempoPresionado > 500) {
+      if (volumen > 0) {
+        volumen--;
+        player.volume(volumen);
+        delay(200);
+      }
+    }
+
+  } else {
+    if (presionandoPause) {
+      if (millis() - tiempoPresionado < 500) {
+        player.pause();
+      }
+      presionandoPause = false;
+    }
+  }
+}
