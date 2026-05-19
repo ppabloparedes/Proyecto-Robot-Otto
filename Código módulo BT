@@ -1,0 +1,47 @@
+#include <SoftwareSerial.h>
+
+SoftwareSerial BT(A1, A2);
+// RX, TX
+
+void setup() {
+
+  Serial.begin(9600);
+  BT.begin(38400);
+
+  Serial.println("Modo AT listo");
+
+}
+
+void loop() {
+
+  // Enviar comandos al HC-05
+  if (Serial.available()) {
+
+    BT.write(Serial.read());
+
+  }
+
+  // Mostrar respuesta del HC-05
+  if (BT.available()) {
+
+    Serial.write(BT.read());
+
+  }
+
+}
+
+//COMANDOS AT
+AT+NAME?
+  +NAME:WAYRURO.PE
+AT+PSWD?
+  +PIN:"1234"
+AT+UART?
+  +UART:9600,0,0
+AT+ROLE?
+  +ROLE:0
+AT+RESET
+
+
+
+
+
