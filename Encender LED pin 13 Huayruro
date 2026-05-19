@@ -1,0 +1,36 @@
+#include <SoftwareSerial.h>
+
+SoftwareSerial BT(A1, A2);
+// RX, TX
+
+int led = 13;
+
+void setup() {
+
+  Serial.begin(9600);
+  BT.begin(9600);
+
+  pinMode(led, OUTPUT);
+
+  Serial.println("Bluetooth listo");
+
+}
+
+void loop() {
+
+  // Verificar si llega un dato Bluetooth
+  if (BT.available()) {
+
+    char dato = BT.read();
+
+    Serial.println(dato);
+
+    // Encender LED al recibir A
+    if (dato == 'A') {
+
+      digitalWrite(led, HIGH);
+
+    }
+
+  }
+}
